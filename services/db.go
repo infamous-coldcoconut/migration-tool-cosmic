@@ -46,7 +46,7 @@ func AcquireLock(db *sql.DB) {
 	if !acquired {
 		log.Fatalf("Databáze je aktuálně uzamčena jiným procesem! Zřejmě právě probíhá migrace na jiném serveru. Ukončuji...")
 	}
-	fmt.Println("🔒 Exkluzivní zámek databáze získán.")
+	fmt.Println("Exkluzivní zámek databáze získán.")
 }
 
 // ReleaseLock zámek opět uvolní

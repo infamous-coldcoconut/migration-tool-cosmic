@@ -40,7 +40,7 @@ func RunStatus(dbUrl string, migrationsDir string) {
 		if err := rows.Scan(&version, &appliedAt, &author); err != nil {
 			log.Fatalf("Chyba při parsování řádku z databáze: %v", err)
 		}
-		// Uloží data do příslušných map
+		// Uloží data do map
 		appliedTimes[version] = appliedAt
 		appliedAuthors[version] = author
 	}
@@ -81,7 +81,7 @@ func RunStatus(dbUrl string, migrationsDir string) {
 		appliedAt := "-"
 		author := "-"
 
-		// Zkontrolujeme, jestli verze existuje v mapě aplikovaných časů
+		// Zkontroluje, jestli verze existuje v mapě aplikovaných časů
 		timeVal, isApplied := appliedTimes[version]
 
 		if isApplied {

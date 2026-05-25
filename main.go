@@ -50,11 +50,12 @@ var statusCmd = &cobra.Command{
 var createCmd = &cobra.Command{
 	Use:   "create [název_migrace]",
 	Short: "Vytvoří nové prázdné migrační soubory",
+
 	//zkontroluje, že user napsal přesně 1 slovo
 	Args: cobra.ExactArgs(1), 
 	Run: func(cmd *cobra.Command, args []string) {
 		migrationName := args[0]
-		fmt.Printf("📝 Vytvářím nové migrační soubory pro: %s...\n", migrationName)
+		fmt.Printf("Vytvářím nové migrační soubory pro: %s...\n", migrationName)
 		services.RunCreate(migDir, migrationName)
 	},
 }
