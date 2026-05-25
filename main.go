@@ -67,7 +67,8 @@ func main() {
 	defaultDir := os.Getenv("MIGRATIONS_DIR")
 	
 	if defaultDB == "" {
-		defaultDB = "postgres://postgres:admin@localhost:5432/cosmic?sslmode=disable"
+		// defaultDB = "postgres://postgres:admin@localhost:5432/cosmic?sslmode=disable"
+		fmt.Printf("DATABASE_URL je prázdná")
 	}
 	if defaultDir == "" {
 		defaultDir = "./migrations"
