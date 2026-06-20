@@ -16,7 +16,7 @@ func getMigrationLockID() int64 {
 		if err == nil {
 			return parsedID
 		}
-		log.Printf("Upozornění: MIGRATIONLOCKID '%s' není platné číslo, používám výchozí.", envLockID)
+		log.Printf("Warning: MIGRATIONLOCKID '%s' is not a valid number, using default.", envLockID)
 	}
 	return 42424242
 }
@@ -24,11 +24,11 @@ func getMigrationLockID() int64 {
 func ConnectDB(dbUrl string) *sql.DB {
 	db, err := sql.Open("postgres", dbUrl)
 	if err != nil {
-		log.Fatalf("Nelze inicializovat databázi: %v", err)
+		log.Fatalf("Failed to initialize database: %v", err)
 	}
 	
 	if err := db.Ping(); err != nil {
-		log.Fatalf("Databáze neodpovídá. Zkontrolujte připojovací údaje a zda server běží. Detail: %v", err)
+		log.Fatalf("Database is unresponsive. Check connection details and whether the server is running. Details: %v", err)
 	}
 	
 	return db
@@ -40,13 +40,13 @@ func AcquireLock(db *sql.DB) {
 
 	err := db.QueryRow("SELECT pg_try_advisory_lock($1)", lockID).Scan(&acquired)
 	if err != nil {
-		log.Fatalf("Chyba při snaze zamknout databázi: %v", err)
+		log.Fatalf("Error while trying to lock the database: %v", err)
 	}
 
 	if !acquired {
-		log.Fatalf("Databáze je aktuálně uzamčena jiným procesem! Zřejmě právě probíhá migrace na jiném serveru. Ukončuji...")
+		log.Fatalf("Database is currently locked by another process! A migration is likely running on another server. Exiting...")
 	}
-	fmt.Println("Exkluzivní zámek databáze získán.")
+	fmt.Println("Exclusive database lock acquired.")
 }
 
 // ReleaseLock zámek opět uvolní
@@ -56,8 +56,8 @@ func ReleaseLock(db *sql.DB) {
 	
 	err := db.QueryRow("SELECT pg_advisory_unlock($1)", lockID).Scan(&released)
 	if err != nil {
-		log.Printf("Upozornění: Chyba při uvolňování zámku: %v", err)
+		log.Printf("Warning: Error while releasing lock: %v", err)
 	} else if released {
-		fmt.Println("Zámek databáze úspěšně uvolněn.")
+		fmt.Println("Database lock successfully released.")
 	}
 }

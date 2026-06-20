@@ -19,7 +19,7 @@ func RunUp(dbUrl string, migrationsDir string) {
 	AcquireLock(db)
 	defer ReleaseLock(db)
 
-	fmt.Println("Úspěšně připojeno k PostgreSQL databázi!")
+	fmt.Println("Successfully connected to PostgreSQL database!")
 
 	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS cosmic_schema_migrations (
 		version VARCHAR(255) PRIMARY KEY,
@@ -28,12 +28,12 @@ func RunUp(dbUrl string, migrationsDir string) {
 		author VARCHAR(255)
 	)`)
 	if err != nil {
-		log.Fatalf("Nelze vytvořit tabulku cosmic_schema_migrations: %v", err)
+		log.Fatalf("Failed to create cosmic_schema_migrations table: %v", err)
 	}
 
 	files, err := os.ReadDir(migrationsDir)
 	if err != nil {
-		log.Fatalf("Nelze načíst složku s migracemi (%s): %v", migrationsDir, err)
+		log.Fatalf("Failed to read migrations directory (%s): %v", migrationsDir, err)
 	}
 
 	var upFiles []string
@@ -45,7 +45,7 @@ func RunUp(dbUrl string, migrationsDir string) {
 	sort.Strings(upFiles)
 
 	if len(upFiles) == 0 {
-		fmt.Println("Ve složce nejsou žádné migrace (.up.sql).")
+		fmt.Println("No migrations (.up.sql) found in the directory.")
 		return
 	}
 
@@ -58,7 +58,7 @@ func RunUp(dbUrl string, migrationsDir string) {
 		filePath := filepath.Join(migrationsDir, file)
 		content, err := os.ReadFile(filePath)
 		if err != nil {
-			log.Fatalf("Nelze přečíst soubor %s: %v", file, err)
+			log.Fatalf("Failed to read file %s: %v", file, err)
 		}
 
 		currentHash := utils.CalculateHash(content)
@@ -70,51 +70,53 @@ func RunUp(dbUrl string, migrationsDir string) {
 			// Záznam v DB existuje (migrace už proběhla)
 			if dbHash != currentHash {
 				log.Fatalf(`
-				KRITICKÁ CHYBA INTEGRITY! 
-				Soubor: %s
+CRITICAL INTEGRITY ERROR! 
+File: %s
 
-				Tato migrace už byla v minulosti úspěšně spuštěna, ale její obsah na disku se ZMĚNIL!
-				Očekávaný otisk (v DB): %s
-				Aktuální otisk (soubor): %s
-				`, file, dbHash, currentHash)
+This migration was successfully applied in the past, but its content on disk has CHANGED!
+It is strictly forbidden to modify historical SQL files. If you need a change, create a new migration.
+
+Expected hash (in DB): %s
+Actual hash (file): %s
+`, file, dbHash, currentHash)
 			}
 			
 			// Hashe sedí, přeskočí
 			continue
 		} else if err != sql.ErrNoRows {
-			log.Fatalf("Chyba při kontrole stavu migrace %s: %v", version, err)
+			log.Fatalf("Error checking status for migration %s: %v", version, err)
 		}
 
 		// Migrace ještě neproběhla -> Transakce
 		tx, err := db.Begin()
 		if err != nil {
-			log.Fatalf("Nelze zahájit transakci pro %s: %v", file, err)
+			log.Fatalf("Failed to begin transaction for %s: %v", file, err)
 		}
 
 		_, err = tx.Exec(string(content))
 		if err != nil {
 			tx.Rollback() 
-			log.Fatalf("Chyba při exekuci %s: %v (proveden ROLLBACK)", file, err)
+			log.Fatalf("Error executing %s: %v (ROLLBACK performed)", file, err)
 		}
 
 		_, err = tx.Exec("INSERT INTO cosmic_schema_migrations (version, hash, author) VALUES ($1, $2, $3)", version, currentHash, currentAuthor)
 		if err != nil {
 			tx.Rollback()
-			log.Fatalf("Nelze zapsat stav migrace %s: %v", file, err)
+			log.Fatalf("Failed to save migration state %s: %v", file, err)
 		}
 
 		err = tx.Commit()
 		if err != nil {
-			log.Fatalf("Nelze potvrdit transakci pro %s: %v", file, err)
+			log.Fatalf("Failed to commit transaction for %s: %v", file, err)
 		}
 
-		fmt.Printf("Aplikována migrace: %s (Autor: %s)\n", file, currentAuthor)
+		fmt.Printf("Applied migration: %s (Author: %s)\n", file, currentAuthor)
 		appliedCount++
 	}
 
 	if appliedCount == 0 {
-		fmt.Println("Databáze je aktuální, žádné nové migrace k aplikování.")
+		fmt.Println("Database is up-to-date, no new migrations to apply.")
 	} else {
-		fmt.Printf("Úspěšně aplikováno %d nových migrací!\n", appliedCount)
+		fmt.Printf("Successfully applied %d new migrations!\n", appliedCount)
 	}
 }

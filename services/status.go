@@ -20,7 +20,7 @@ func RunStatus(dbUrl string, migrationsDir string) {
 		author VARCHAR(255)
 	)`)
 	if err != nil {
-		log.Fatalf("Nelze ověřit stavovou tabulku: %v", err)
+		log.Fatalf("Failed to verify the state table: %v", err)
 	}
 
 	// Místo struktury vytvoříme dvě jednoduché mapy
@@ -29,7 +29,7 @@ func RunStatus(dbUrl string, migrationsDir string) {
 
 	rows, err := db.Query("SELECT version, applied_at, author FROM cosmic_schema_migrations")
 	if err != nil {
-		log.Fatalf("Chyba při čtení historie z databáze: %v", err)
+		log.Fatalf("Error reading history from database: %v", err)
 	}
 	defer rows.Close()
 
@@ -38,7 +38,7 @@ func RunStatus(dbUrl string, migrationsDir string) {
 		var appliedAt string
 		var author string
 		if err := rows.Scan(&version, &appliedAt, &author); err != nil {
-			log.Fatalf("Chyba při parsování řádku z databáze: %v", err)
+			log.Fatalf("Error parsing row from database: %v", err)
 		}
 		// Uloží data do map
 		appliedTimes[version] = appliedAt
@@ -58,7 +58,7 @@ func RunStatus(dbUrl string, migrationsDir string) {
 			}
 		}
 	} else {
-		fmt.Printf("Upozornění: Složka %s neexistuje nebo ji nelze přečíst.\n", migrationsDir)
+		fmt.Printf("Warning: Directory %s does not exist or cannot be read.\n", migrationsDir)
 	}
 
 	for dbVersion := range appliedTimes {
@@ -69,12 +69,12 @@ func RunStatus(dbUrl string, migrationsDir string) {
 
 	allVersions = uniqueAndSort(allVersions)
 
-	fmt.Println("\n STAV MIGRACÍ DATABÁZE")
+	fmt.Println("\n📊 DATABASE MIGRATION STATUS")
 	fmt.Println("==========================================================================================")
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
-	fmt.Fprintln(w, "VERZE\tSTAV\tAUTOR\tAPLIKOVÁNO KDY\t")
-	fmt.Fprintln(w, "-----\t----\t-----\t--------------\t")
+	fmt.Fprintln(w, "VERSION\tSTATUS\tAUTHOR\tAPPLIED AT\t")
+	fmt.Fprintln(w, "-------\t------\t------\t----------\t")
 
 	for _, version := range allVersions {
 		status := ""
@@ -86,14 +86,14 @@ func RunStatus(dbUrl string, migrationsDir string) {
 
 		if isApplied {
 			if diskVersions[version] {
-				status = "Aplikováno"
+				status = "Applied"
 			} else {
-				status = "Chybí soubor"
+				status = "Missing file"
 			}
 			appliedAt = strings.Split(timeVal, ".")[0]
 			author = appliedAuthors[version] // Získá autora z druhé mapy
 		} else {
-			status = "Čeká"
+			status = "Pending"
 		}
 
 		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t\n", version, status, author, appliedAt)
