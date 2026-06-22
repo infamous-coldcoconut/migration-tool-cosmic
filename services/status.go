@@ -69,7 +69,7 @@ func RunStatus(dbUrl string, migrationsDir string) {
 
 	allVersions = uniqueAndSort(allVersions)
 
-	fmt.Println("\n📊 DATABASE MIGRATION STATUS")
+	fmt.Println("\nDATABASE MIGRATION STATUS")
 	fmt.Println("==========================================================================================")
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)

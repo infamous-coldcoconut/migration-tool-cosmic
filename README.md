@@ -6,3 +6,5 @@ DATABASE_URL=postgres://postgres:admin@localhost:5432/cosmic?sslmode=disable
 MIGRATIONS_DIR=./migrations
 MIGRATIONLOCKID=42424242
 MIGRATION_AUTHOR=admin
+
+For compilation use command: go build -o cosmic.exe
