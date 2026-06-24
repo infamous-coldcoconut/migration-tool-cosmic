@@ -9,7 +9,6 @@ import (
 	"strings"
 )
 
-// možná přidat ještě rollback více stepů
 func RunDown(dbUrl string, migrationsDir string) {
 	db := ConnectDB(dbUrl)
 	defer db.Close()
@@ -51,6 +50,11 @@ func RunDown(dbUrl string, migrationsDir string) {
 	content, err := os.ReadFile(filePath)
 	if err != nil {
 		log.Fatalf("Failed to read file %s: %v", downFile, err)
+	}
+
+	// Dá chybu pokud v souboru je prázdno -> proti
+	if len(strings.TrimSpace(string(content))) == 0 {
+		log.Fatalf("Error: File %s is empty! Please write and save your SQL rollback commands (e.g., DROP TABLE) before running 'down'.", downFile)
 	}
 
 	tx, err := db.Begin()

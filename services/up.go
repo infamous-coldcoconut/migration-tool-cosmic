@@ -61,6 +61,10 @@ func RunUp(dbUrl string, migrationsDir string) {
 			log.Fatalf("Failed to read file %s: %v", file, err)
 		}
 
+		if len(strings.TrimSpace(string(content))) == 0 {
+			log.Fatalf("Error: File %s is empty! Please write and save your SQL commands before running 'up'.", file)
+		}
+
 		currentHash := utils.CalculateHash(content)
 
 		var dbHash string 
